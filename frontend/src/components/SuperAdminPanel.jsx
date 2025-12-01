@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, Clock, CheckCircle, XCircle, Edit, Car, ClipboardList, MessageSquare, FileText, User, Upload, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, CheckCircle, XCircle, Edit, Car, ClipboardList, MessageSquare, FileText, User, Upload, X, RefreshCw } from "lucide-react";
 
 const SuperAdminPanel = () => {
   const [sessions, setSessions] = useState([]);
@@ -29,7 +29,7 @@ const SuperAdminPanel = () => {
   const [clockForm, setClockForm] = useState({ clockIn: "", clockOut: "" });
   const [vehicleForm, setVehicleForm] = useState({ vehicle_model: "", registration_number: "", roadtax_expiry: "" });
   const [testForm, setTestForm] = useState({ score: "" });
-  const [checklistForm, setChecklistForm] = useState({ interval: "pre", items: [], images: {} });
+  const [checklistForm, setChecklistForm] = useState({ interval: "pre", items: [] });
   const [checklistTemplate, setChecklistTemplate] = useState(null);
   const [feedbackForm, setFeedbackForm] = useState({ responses: [] });
   const [feedbackTemplate, setFeedbackTemplate] = useState(null);
@@ -56,53 +56,63 @@ const SuperAdminPanel = () => {
     }
   };
 
+  const loadSessionParticipants = async (sessionId) => {
+    try {
+      const response = await axiosInstance.get(`/sessions/${sessionId}/participants`);
+      
+      const enriched = await Promise.all(response.data.map(async (p) => {
+        const participantUser = p.user || p;
+        
+        try {
+          const [testsRes, checklistRes, attendanceRes] = await Promise.all([
+            axiosInstance.get(`/tests/results/participant/${participantUser.id}`).catch(() => ({ data: [] })),
+            axiosInstance.get(`/vehicle-checklists/${sessionId}/${participantUser.id}`).catch(() => ({ data: [] })),
+            axiosInstance.get(`/attendance/session/${sessionId}/participant/${participantUser.id}`).catch(() => ({ data: [] }))
+          ]);
+          
+          const sessionTests = testsRes.data.filter(t => t.session_id === sessionId);
+          const preTest = sessionTests.find(t => t.test_type === "pre");
+          const postTest = sessionTests.find(t => t.test_type === "post");
+          
+          return {
+            ...participantUser,
+            sessionId,
+            attendance: attendanceRes.data || [],
+            preTest: preTest ? { ...preTest, completed: true } : { completed: false },
+            postTest: postTest ? { ...postTest, completed: true } : { completed: false },
+            checklist: checklistRes.data?.length > 0 ? { completed: true, data: checklistRes.data } : { completed: false }
+          };
+        } catch (error) {
+          return {
+            ...participantUser,
+            sessionId,
+            attendance: [],
+            preTest: { completed: false },
+            postTest: { completed: false },
+            checklist: { completed: false }
+          };
+        }
+      }));
+      
+      return enriched;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  };
+
   const toggleSessionExpand = async (sessionId) => {
     if (expandedSessions[sessionId]) {
       setExpandedSessions(prev => ({ ...prev, [sessionId]: null }));
     } else {
-      try {
-        const response = await axiosInstance.get(`/sessions/${sessionId}/participants`);
-        
-        const enriched = await Promise.all(response.data.map(async (p) => {
-          const participantUser = p.user || p;
-          
-          try {
-            const [testsRes, checklistRes, attendanceRes] = await Promise.all([
-              axiosInstance.get(`/tests/results/participant/${participantUser.id}`).catch(() => ({ data: [] })),
-              axiosInstance.get(`/vehicle-checklists/${sessionId}/${participantUser.id}`).catch(() => ({ data: [] })),
-              axiosInstance.get(`/attendance/session/${sessionId}/participant/${participantUser.id}`).catch(() => ({ data: [] }))
-            ]);
-            
-            const sessionTests = testsRes.data.filter(t => t.session_id === sessionId);
-            const preTest = sessionTests.find(t => t.test_type === "pre");
-            const postTest = sessionTests.find(t => t.test_type === "post");
-            
-            return {
-              ...participantUser,
-              sessionId,
-              attendance: attendanceRes.data || [],
-              preTest: preTest ? { ...preTest, completed: true } : { completed: false },
-              postTest: postTest ? { ...postTest, completed: true } : { completed: false },
-              checklist: checklistRes.data?.length > 0 ? { completed: true, data: checklistRes.data } : { completed: false }
-            };
-          } catch (error) {
-            return {
-              ...participantUser,
-              sessionId,
-              attendance: [],
-              preTest: { completed: false },
-              postTest: { completed: false },
-              checklist: { completed: false }
-            };
-          }
-        }));
-        
-        setExpandedSessions(prev => ({ ...prev, [sessionId]: enriched }));
-      } catch (error) {
-        toast.error("Failed to load participants");
-        console.error(error);
-      }
+      const participants = await loadSessionParticipants(sessionId);
+      setExpandedSessions(prev => ({ ...prev, [sessionId]: participants }));
     }
+  };
+
+  const refreshParticipant = async (sessionId, participantId) => {
+    const participants = await loadSessionParticipants(sessionId);
+    setExpandedSessions(prev => ({ ...prev, [sessionId]: participants }));
   };
 
   const toggleParticipantExpand = (participantId) => {
@@ -112,7 +122,7 @@ const SuperAdminPanel = () => {
     }));
   };
 
-  // Handle Clock In/Out
+  // Handle Clock In/Out - Keep dialog open and refresh status
   const handleClockInOut = async () => {
     try {
       const { participant, sessionId } = clockInOutDialog;
@@ -134,8 +144,12 @@ const SuperAdminPanel = () => {
       }
       
       toast.success("Attendance updated successfully");
-      setClockInOutDialog({ open: false, participant: null, sessionId: null });
-      toggleSessionExpand(sessionId);
+      
+      // Refresh participant data but keep dialog open
+      await refreshParticipant(sessionId, participant.id);
+      
+      // Clear form but keep dialog open
+      setClockForm({ clockIn: "", clockOut: "" });
     } catch (error) {
       toast.error("Failed to update attendance");
       console.error(error);
@@ -161,15 +175,16 @@ const SuperAdminPanel = () => {
       });
       
       toast.success("Vehicle details saved");
-      setVehicleDialog({ open: false, participant: null, sessionId: null });
-      toggleSessionExpand(sessionId);
+      
+      await refreshParticipant(sessionId, participant.id);
+      setVehicleForm({ vehicle_model: "", registration_number: "", roadtax_expiry: "" });
     } catch (error) {
       toast.error("Failed to save vehicle details");
       console.error(error);
     }
   };
 
-  // Handle Test Submission
+  // Handle Test Submission - Update badge immediately
   const handleTestSubmit = async () => {
     try {
       const { participant, sessionId, testType } = testDialog;
@@ -211,8 +226,11 @@ const SuperAdminPanel = () => {
       });
       
       toast.success(`${testType === 'pre' ? 'Pre' : 'Post'}-test submitted with ${score}% (${correctAnswersNeeded}/${totalQuestions} correct)`);
-      setTestDialog({ open: false, participant: null, sessionId: null, testType: null });
-      toggleSessionExpand(sessionId);
+      
+      // Refresh participant to update badge
+      await refreshParticipant(sessionId, participant.id);
+      
+      setTestForm({ score: "" });
     } catch (error) {
       toast.error("Failed to submit test");
       console.error(error);
@@ -245,19 +263,18 @@ const SuperAdminPanel = () => {
       setChecklistTemplate(template);
       setChecklistForm({
         interval: "pre",
-        items: template.items.map(item => ({ item, checked: false, image: null })),
-        images: {}
+        items: template.items.map(item => ({ item, status: "good", image: null }))
       });
       setChecklistDialog({ open: true, participant, sessionId });
     }
   };
 
-  // Handle Checklist Item Toggle
-  const toggleChecklistItem = (index) => {
+  // Handle Checklist Item Status Change
+  const updateChecklistItemStatus = (index, status) => {
     setChecklistForm(prev => ({
       ...prev,
       items: prev.items.map((item, i) => 
-        i === index ? { ...item, checked: !item.checked } : item
+        i === index ? { ...item, status } : item
       )
     }));
   };
@@ -290,14 +307,22 @@ const SuperAdminPanel = () => {
         interval: checklistForm.interval,
         checklist_items: checklistForm.items.map(item => ({
           item: item.item,
-          checked: item.checked,
+          status: item.status,
           image_url: item.image || ""
         }))
       });
       
       toast.success("Checklist submitted successfully");
-      setChecklistDialog({ open: false, participant: null, sessionId: null });
-      toggleSessionExpand(sessionId);
+      
+      await refreshParticipant(sessionId, participant.id);
+      
+      // Reset form but keep dialog open
+      if (checklistTemplate) {
+        setChecklistForm({
+          interval: "pre",
+          items: checklistTemplate.items.map(item => ({ item, status: "good", image: null }))
+        });
+      }
     } catch (error) {
       toast.error("Failed to submit checklist");
       console.error(error);
@@ -355,8 +380,14 @@ const SuperAdminPanel = () => {
       });
       
       toast.success("Feedback submitted successfully");
-      setFeedbackDialog({ open: false, participant: null, sessionId: null });
-      toggleSessionExpand(sessionId);
+      
+      await refreshParticipant(sessionId, participant.id);
+      
+      if (feedbackTemplate) {
+        setFeedbackForm({
+          responses: feedbackTemplate.questions.map(q => ({ question: q.question, response: "" }))
+        });
+      }
     } catch (error) {
       toast.error("Failed to submit feedback");
       console.error(error);
@@ -386,7 +417,7 @@ const SuperAdminPanel = () => {
             🔐 Super Admin - Quick Testing Panel
           </CardTitle>
           <CardDescription className="text-purple-100">
-            Fill in participant data exactly as they would in their portal. All data syncs across all portals.
+            Fill in participant data exactly as they would. Dialogs stay open so you can continue working. Click refresh icon to update status.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -442,10 +473,22 @@ const SuperAdminPanel = () => {
                                 <p className="text-sm text-gray-600">IC: {participant.id_number}</p>
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 items-center">
                               {getStatusBadge(participant.preTest)}
                               {getStatusBadge(participant.postTest)}
                               {getStatusBadge(participant.checklist)}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  refreshParticipant(session.id, participant.id);
+                                  toast.success("Status refreshed");
+                                }}
+                                title="Refresh status"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
                         </CardHeader>
@@ -535,12 +578,12 @@ const SuperAdminPanel = () => {
         </div>
       )}
 
-      {/* Clock In/Out Dialog */}
-      <Dialog open={clockInOutDialog.open} onOpenChange={(open) => setClockInOutDialog({ ...clockInOutDialog, open })}>
+      {/* Clock In/Out Dialog - Stays Open */}
+      <Dialog open={clockInOutDialog.open} onOpenChange={(open) => !open && setClockInOutDialog({ open: false, participant: null, sessionId: null })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Clock In/Out - {clockInOutDialog.participant?.full_name}</DialogTitle>
-            <DialogDescription>Set attendance times for this participant</DialogDescription>
+            <DialogDescription>Set attendance times. Dialog stays open so you can edit again.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -560,18 +603,18 @@ const SuperAdminPanel = () => {
               />
             </div>
             <Button onClick={handleClockInOut} className="w-full">
-              Save Attendance
+              Save Attendance (Stays Open)
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Vehicle Dialog - Same as Participant Portal */}
-      <Dialog open={vehicleDialog.open} onOpenChange={(open) => setVehicleDialog({ ...vehicleDialog, open })}>
+      {/* Vehicle Dialog */}
+      <Dialog open={vehicleDialog.open} onOpenChange={(open) => !open && setVehicleDialog({ open: false, participant: null, sessionId: null })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Vehicle Details - {vehicleDialog.participant?.full_name}</DialogTitle>
-            <DialogDescription>Enter vehicle information (same form as participant portal)</DialogDescription>
+            <DialogDescription>Enter vehicle information. Dialog stays open.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -606,14 +649,14 @@ const SuperAdminPanel = () => {
       </Dialog>
 
       {/* Test Dialog */}
-      <Dialog open={testDialog.open} onOpenChange={(open) => setTestDialog({ ...testDialog, open })}>
+      <Dialog open={testDialog.open} onOpenChange={(open) => !open && setTestDialog({ open: false, participant: null, sessionId: null, testType: null })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {testDialog.testType === 'pre' ? 'Pre' : 'Post'}-Test - {testDialog.participant?.full_name}
             </DialogTitle>
             <DialogDescription>
-              Enter the score (0-100). System will auto-generate answers to match this score.
+              Enter score. Badge will update automatically. Dialog stays open.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -632,18 +675,18 @@ const SuperAdminPanel = () => {
               </p>
             </div>
             <Button onClick={handleTestSubmit} className="w-full">
-              Submit Test
+              Submit Test (Badge Updates)
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Checklist Dialog - Same as Trainer Portal */}
-      <Dialog open={checklistDialog.open} onOpenChange={(open) => setChecklistDialog({ ...checklistDialog, open })} className="max-w-2xl">
+      {/* Checklist Dialog - With Interval and 3 Options */}
+      <Dialog open={checklistDialog.open} onOpenChange={(open) => !open && setChecklistDialog({ open: false, participant: null, sessionId: null })} className="max-w-2xl">
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Checklist - {checklistDialog.participant?.full_name}</DialogTitle>
-            <DialogDescription>Check items and upload pictures (same as trainer portal)</DialogDescription>
+            <DialogDescription>Select interval and status for each item. Upload pictures if needed.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -662,67 +705,79 @@ const SuperAdminPanel = () => {
             <div className="space-y-3">
               {checklistForm.items.map((item, index) => (
                 <Card key={index} className="p-3">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={item.checked}
-                      onCheckedChange={() => toggleChecklistItem(index)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <Label className="text-sm font-normal">{item.item}</Label>
-                      <div className="mt-2">
-                        {item.image ? (
-                          <div className="relative inline-block">
-                            <img src={item.image} alt="Checklist" className="w-32 h-32 object-cover rounded" />
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="absolute top-1 right-1 h-6 w-6 p-0"
-                              onClick={() => {
-                                setChecklistForm(prev => ({
-                                  ...prev,
-                                  items: prev.items.map((it, i) => 
-                                    i === index ? { ...it, image: null } : it
-                                  )
-                                }));
-                              }}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">{item.item}</Label>
+                    
+                    <div>
+                      <Label className="text-xs text-gray-600">Status:</Label>
+                      <RadioGroup value={item.status} onValueChange={(val) => updateChecklistItemStatus(index, val)} className="flex gap-4 mt-2">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="good" id={`good-${index}`} />
+                          <Label htmlFor={`good-${index}`} className="text-sm cursor-pointer">✓ Good</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="satisfactory" id={`sat-${index}`} />
+                          <Label htmlFor={`sat-${index}`} className="text-sm cursor-pointer">~ Satisfactory</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="need_repair" id={`repair-${index}`} />
+                          <Label htmlFor={`repair-${index}`} className="text-sm cursor-pointer">✗ Need Repair</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div>
+                      {item.image ? (
+                        <div className="relative inline-block">
+                          <img src={item.image} alt="Checklist" className="w-32 h-32 object-cover rounded" />
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="absolute top-1 right-1 h-6 w-6 p-0"
+                            onClick={() => {
+                              setChecklistForm(prev => ({
+                                ...prev,
+                                items: prev.items.map((it, i) => 
+                                  i === index ? { ...it, image: null } : it
+                                )
+                              }));
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer">
+                          <div className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800">
+                            <Upload className="w-4 h-4" />
+                            Upload Picture (Optional)
                           </div>
-                        ) : (
-                          <label className="cursor-pointer">
-                            <div className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800">
-                              <Upload className="w-4 h-4" />
-                              Upload Picture
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => handleChecklistImageUpload(index, e)}
-                            />
-                          </label>
-                        )}
-                      </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleChecklistImageUpload(index, e)}
+                          />
+                        </label>
+                      )}
                     </div>
                   </div>
                 </Card>
               ))}
             </div>
             <Button onClick={handleChecklistSubmit} className="w-full">
-              Submit Checklist
+              Submit Checklist (Badge Updates)
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Feedback Dialog - Same as Participant Portal */}
-      <Dialog open={feedbackDialog.open} onOpenChange={(open) => setFeedbackDialog({ ...feedbackDialog, open })} className="max-w-2xl">
+      {/* Feedback Dialog */}
+      <Dialog open={feedbackDialog.open} onOpenChange={(open) => !open && setFeedbackDialog({ open: false, participant: null, sessionId: null })} className="max-w-2xl">
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Feedback - {feedbackDialog.participant?.full_name}</DialogTitle>
-            <DialogDescription>Fill in feedback form (same as participant portal)</DialogDescription>
+            <DialogDescription>Fill in feedback form. Dialog stays open.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {feedbackTemplate?.questions.map((question, index) => (
