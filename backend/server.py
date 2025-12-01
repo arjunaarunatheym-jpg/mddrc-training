@@ -2898,7 +2898,7 @@ async def super_admin_submit_test(data: SuperAdminTestSubmit, current_user: User
         participant_id=data.participant_id,
         session_id=data.session_id,
         test_type=test_doc['test_type'],
-        answers=answers,
+        answers=data.answers,
         score=score,
         total_questions=len(questions),
         correct_answers=correct,
@@ -2912,7 +2912,7 @@ async def super_admin_submit_test(data: SuperAdminTestSubmit, current_user: User
     
     update_field = 'pre_test_completed' if test_doc['test_type'] == 'pre' else 'post_test_completed'
     await db.participant_access.update_one(
-        {"participant_id": participant_id, "session_id": session_id},
+        {"participant_id": data.participant_id, "session_id": data.session_id},
         {"$set": {update_field: True}},
         upsert=True
     )
