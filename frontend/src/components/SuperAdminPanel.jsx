@@ -571,7 +571,7 @@ const SuperAdminPanel = () => {
       </Dialog>
 
       {/* Vehicle Dialog - Same as Participant Portal */}
-      <Dialog open={vehicleDialog.open} onOpenChange={(open) => setVehicleDialog({ ...vehicleDialog, open }))}>
+      <Dialog open={vehicleDialog.open} onOpenChange={(open) => setVehicleDialog({ ...vehicleDialog, open })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Vehicle Details - {vehicleDialog.participant?.full_name}</DialogTitle>
