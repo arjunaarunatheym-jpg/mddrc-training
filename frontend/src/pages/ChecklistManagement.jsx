@@ -56,7 +56,7 @@ const ChecklistManagement = ({ program }) => {
 
   const handleDeleteChecklistItem = async (templateId, itemIndex) => {
     try {
-      await axiosInstance.delete(`/checklists/templates/${templateId}/items/${itemIndex}`);
+      await axiosInstance.delete(`/checklist-templates/${templateId}/items/${itemIndex}`);
       toast.success("Checklist item deleted");
       loadChecklistTemplates();
     } catch (error) {
