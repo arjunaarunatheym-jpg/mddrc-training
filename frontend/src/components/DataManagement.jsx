@@ -13,8 +13,15 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Search, Edit, Trash2, Eye, Filter, Database, History } from "lucide-react";
+import SuperAdminPanel from "./SuperAdminPanel";
 
-const DataManagement = () => {
+const DataManagement = ({ user }) => {
+  // Show Super Admin Panel ONLY for arjuna@mddrc.com.my
+  if (user && user.email === "arjuna@mddrc.com.my") {
+    return <SuperAdminPanel />;
+  }
+  
+  // Original Data Management component for other admins
   // Filter state
   const [sessions, setSessions] = useState([]);
   const [companies, setCompanies] = useState([]);
