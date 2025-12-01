@@ -81,7 +81,7 @@ const ChecklistManagement = ({ program }) => {
       formData.append('file', file);
       formData.append('program_id', program.id);
 
-      const response = await axiosInstance.post('/checklists/templates/bulk-upload', formData, {
+      const response = await axiosInstance.post('/checklist-templates/bulk-upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
