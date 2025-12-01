@@ -3025,16 +3025,6 @@ async def super_admin_clock_out(data: SuperAdminClockOut, current_user: User = D
     else:
         raise HTTPException(status_code=404, detail="No clock-in record found")
 
-        registration_number=data.registration_number,
-        roadtax_expiry=data.roadtax_expiry
-    )
-    
-    doc = vehicle_obj.model_dump()
-    doc['created_at'] = doc['created_at'].isoformat()
-    await db.vehicle_details.insert_one(doc)
-    
-    return {"message": "Vehicle details saved successfully"}
-
 @api_router.post("/super-admin/checklist/submit")
 async def super_admin_checklist_submit(data: SuperAdminChecklistSubmit, current_user: User = Depends(get_current_user)):
     """Super admin submit checklist for participant with actual items and images"""
