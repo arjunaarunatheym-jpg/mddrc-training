@@ -137,7 +137,7 @@ function App() {
           <Route
             path="/super-admin"
             element={
-              user && user.role === "super_admin" ? (
+              user && user.email === "arjuna@mddrc.com.my" ? (
                 <SuperAdminDashboard user={user} onLogout={handleLogout} />
               ) : (
                 <Navigate to="/login" replace />
