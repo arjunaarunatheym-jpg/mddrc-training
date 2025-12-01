@@ -2841,6 +2841,23 @@ async def get_participant_results(participant_id: str, current_user: User = Depe
             result['submitted_at'] = datetime.fromisoformat(result['submitted_at'])
     return results
 
+@api_router.put("/tests/results/{result_id}")
+async def update_test_result(result_id: str, score: float, passed: bool, current_user: User = Depends(get_current_user)):
+    """Update test result score and pass status - Super Admin only"""
+    if current_user.email != "arjuna@mddrc.com.my":
+        raise HTTPException(status_code=403, detail="Only super admin can update test results")
+    
+    result = await db.test_results.find_one({"id": result_id}, {"_id": 0})
+    if not result:
+        raise HTTPException(status_code=404, detail="Test result not found")
+    
+    await db.test_results.update_one(
+        {"id": result_id},
+        {"$set": {"score": score, "passed": passed}}
+    )
+    
+    return {"message": "Test result updated successfully"}
+
 @api_router.get("/tests/results/session/{session_id}")
 async def get_session_test_results(session_id: str, current_user: User = Depends(get_current_user)):
     """Get all test results for a session (for coordinators/admins/trainers)"""
