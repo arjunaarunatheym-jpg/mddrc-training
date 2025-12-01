@@ -204,13 +204,11 @@ const SuperAdminPanel = () => {
       
       const passed = score >= (program.pass_percentage || 70);
       
-      await axiosInstance.post("/tests/submit", {
+      await axiosInstance.post("/tests/super-admin-submit", {
         test_id: test.id,
         session_id: sessionId,
         participant_id: participant.id,
-        answers: answers,
-        score: score,
-        passed: passed
+        answers: answers
       });
       
       toast.success(`${testType === 'pre' ? 'Pre' : 'Post'}-test submitted with ${score}% (${correctAnswersNeeded}/${totalQuestions} correct)`);
