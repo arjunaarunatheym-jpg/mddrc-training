@@ -3025,22 +3025,16 @@ async def super_admin_vehicle_details(data: SuperAdminVehicleDetails, current_us
     return {"message": "Vehicle details saved successfully"}
 
 @api_router.post("/super-admin/checklist/submit")
-async def super_admin_checklist_submit(
-    session_id: str,
-    participant_id: str,
-    interval: str,
-    checklist_items: List[dict],
-    current_user: User = Depends(get_current_user)
-):
+async def super_admin_checklist_submit(data: SuperAdminChecklistSubmit, current_user: User = Depends(get_current_user)):
     """Super admin submit checklist for participant with actual items and images"""
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can submit checklists")
     
     checklist_obj = VehicleChecklist(
-        participant_id=participant_id,
-        session_id=session_id,
-        interval=interval,
-        checklist_items=checklist_items
+        participant_id=data.participant_id,
+        session_id=data.session_id,
+        interval=data.interval,
+        checklist_items=data.checklist_items
     )
     
     doc = checklist_obj.model_dump()
