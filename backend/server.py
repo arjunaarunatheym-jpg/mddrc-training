@@ -2839,6 +2839,14 @@ async def get_participant_results(participant_id: str, current_user: User = Depe
     for result in results:
         if isinstance(result.get('submitted_at'), str):
             result['submitted_at'] = datetime.fromisoformat(result['submitted_at'])
+        # Set default test_type if missing (for old records)
+        if 'test_type' not in result:
+            result['test_type'] = 'pre'
+        # Set default total_questions and correct_answers if missing
+        if 'total_questions' not in result:
+            result['total_questions'] = len(result.get('answers', []))
+        if 'correct_answers' not in result:
+            result['correct_answers'] = int((result.get('score', 0) / 100) * result['total_questions'])
     return results
 
 @api_router.put("/tests/results/{result_id}")
