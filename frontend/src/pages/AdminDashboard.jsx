@@ -1203,6 +1203,13 @@ const AdminDashboard = ({ user, onLogout }) => {
               <span className="hidden sm:inline">Settings</span>
               <span className="sm:hidden">Settings</span>
             </TabsTrigger>
+            {user.email === "arjuna@mddrc.com.my" && (
+              <TabsTrigger value="super-admin" data-testid="super-admin-tab" className="flex-1 min-w-[120px] md:min-w-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold">
+                <Search className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">🔐 Super Admin</span>
+                <span className="sm:hidden">Super</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Programs Tab */}
