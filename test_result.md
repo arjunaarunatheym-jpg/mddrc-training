@@ -628,13 +628,14 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Comprehensive End-to-End Flow - Critical System Issues"
     - "Coordinator portal test results endpoint fix"
-    - "Frontend API path migration verification"
-    - "Comprehensive portal testing post-refactoring"
+    - "Participant session assignment mechanism"
+    - "Coordinator release controls implementation"
   stuck_tasks: 
-    - "Assistant Admin Portal authentication issue"
+    - "Comprehensive End-to-End Flow - Critical System Issues"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "critical_first"
 
 agent_communication:
   - agent: "main"
