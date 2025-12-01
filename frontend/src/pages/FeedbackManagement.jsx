@@ -21,14 +21,9 @@ const FeedbackManagement = ({ program, onBack }) => {
 
   const loadTemplate = async () => {
     try {
-      const response = await axiosInstance.get(`/feedback/templates/program/${program.id}`);
-      // API returns an array of templates, get the most recent one
-      if (Array.isArray(response.data) && response.data.length > 0) {
-        // Sort by created_at descending and get the first one (most recent)
-        const sortedTemplates = response.data.sort((a, b) => 
-          new Date(b.created_at || 0) - new Date(a.created_at || 0)
-        );
-        setQuestions(sortedTemplates[0].questions || []);
+      const response = await axiosInstance.get(`/feedback-templates/program/${program.id}`);
+      if (response.data && response.data.questions) {
+        setQuestions(response.data.questions || []);
       } else {
         setQuestions([]);
       }
@@ -75,14 +70,16 @@ const FeedbackManagement = ({ program, onBack }) => {
     }
 
     try {
-      await axiosInstance.post("/feedback/templates", {
+      await axiosInstance.post("/feedback-templates", {
         program_id: program.id,
         questions: questions
       });
       
       toast.success("Feedback template saved successfully!");
     } catch (error) {
-      toast.error("Failed to save feedback template");
+      console.error('Save error:', error);
+      const errorMsg = error.response?.data?.detail || "Failed to save feedback template";
+      toast.error(errorMsg);
     }
   };
 
@@ -102,7 +99,7 @@ const FeedbackManagement = ({ program, onBack }) => {
       formData.append('file', file);
       formData.append('program_id', program.id);
 
-      const response = await axiosInstance.post('/feedback/templates/bulk-upload', formData, {
+      const response = await axiosInstance.post('/feedback-templates/bulk-upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -148,134 +145,128 @@ const FeedbackManagement = ({ program, onBack }) => {
       </CardHeader>
       <CardContent className="pt-6">
         <div className="space-y-4">
+          {/* Bulk Upload Option */}
+          <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+            <Button variant="outline" onClick={() => setUploadDialogOpen(true)} className="w-full sm:w-auto">
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Upload
+            </Button>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Bulk Upload Feedback Questions</DialogTitle>
+                <DialogDescription>
+                  Upload an Excel file (.xlsx or .xls) with feedback questions
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium text-blue-900">Excel Format Required:</p>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Column 1: <strong>Question Text</strong></li>
+                    <li>• Column 2: <strong>Type</strong> (rating or text)</li>
+                    <li>• Column 3: <strong>Required</strong> (yes or no)</li>
+                  </ul>
+                  <p className="text-xs text-blue-600 mt-2">
+                    Note: Questions will be automatically assigned to program: <strong>{program.name}</strong>
+                  </p>
+                </div>
+                
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <label className="cursor-pointer">
+                    <span className="text-sm text-gray-600">
+                      {uploading ? "Uploading..." : "Click to select Excel file"}
+                    </span>
+                    <Input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleBulkUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Questions List */}
           {questions.map((question, index) => (
-            <Card key={index} className="border-2">
+            <Card key={index} className="bg-gray-50">
               <CardContent className="pt-6">
                 <div className="space-y-4">
-                  <div className="flex gap-4 items-start">
-                    <div className="flex-1 space-y-4">
-                      <div>
-                        <Label>Question {index + 1}</Label>
-                        <Input
-                          value={question.question}
-                          onChange={(e) => updateQuestion(index, "question", e.target.value)}
-                          placeholder="Enter your feedback question..."
-                          data-testid={`question-${index}`}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Type</Label>
-                          <Select
-                            value={question.type}
-                            onValueChange={(value) => updateQuestion(index, "type", value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="rating">Rating (1-5 Stars)</SelectItem>
-                              <SelectItem value="text">Text Response</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex items-end">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={question.required}
-                              onChange={(e) => updateQuestion(index, "required", e.target.checked)}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm">Required</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-lg">Question {index + 1}</h3>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => deleteQuestion(index)}
-                      data-testid={`delete-question-${index}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
+                  </div>
+                  
+                  <div>
+                    <Label>Question Text</Label>
+                    <Input
+                      value={question.question}
+                      onChange={(e) => updateQuestion(index, "question", e.target.value)}
+                      placeholder="Enter your feedback question"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Type</Label>
+                      <Select
+                        value={question.type}
+                        onValueChange={(value) => updateQuestion(index, "type", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="rating">Rating (1-5 stars)</SelectItem>
+                          <SelectItem value="text">Text (Open-ended)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center space-x-2 pt-8">
+                      <input
+                        type="checkbox"
+                        id={`required-${index}`}
+                        checked={question.required}
+                        onChange={(e) => updateQuestion(index, "required", e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor={`required-${index}`}>Required</Label>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
 
-          <div className="flex gap-2 mb-4">
-            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-              <Button variant="outline" onClick={() => setUploadDialogOpen(true)} className="flex-1">
-                <Upload className="w-4 h-4 mr-2" />
-                Bulk Upload
-              </Button>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Bulk Upload Feedback Questions</DialogTitle>
-                  <DialogDescription>
-                    Upload an Excel file (.xlsx or .xls) with feedback questions
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded-lg space-y-2">
-                    <p className="text-sm font-medium text-blue-900">Excel Format Required:</p>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• <strong>Program Name</strong> - Must match existing program</li>
-                      <li>• <strong>Question Text</strong> - The feedback question</li>
-                      <li>• <strong>Question Type</strong> - Use &quot;rating&quot;, &quot;multiple_choice&quot;, or &quot;text&quot;</li>
-                      <li>• <strong>Options</strong> - For multiple choice, separate with commas</li>
-                    </ul>
-                    <p className="text-xs text-blue-600 mt-2">
-                      Example: Defensive Riding | How was the training? | rating | (leave blank)
-                    </p>
-                  </div>
-                  
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <label className="cursor-pointer">
-                      <span className="text-sm text-gray-600">
-                        {uploading ? "Uploading..." : "Click to select Excel file"}
-                      </span>
-                      <Input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        onChange={handleBulkUpload}
-                        disabled={uploading}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
+          {/* Add Question Button */}
           <Button
             onClick={addQuestion}
             variant="outline"
             className="w-full border-dashed border-2"
-            data-testid="add-question-button"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Question
           </Button>
 
-          {questions.length > 0 && (
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                onClick={saveTemplate}
-                size="lg"
-                className="bg-gradient-to-r from-purple-600 to-pink-600"
-                data-testid="save-template-button"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Feedback Template
-              </Button>
-            </div>
-          )}
+          {/* Save Button */}
+          <Button
+            onClick={saveTemplate}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            disabled={questions.length === 0}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            Save Feedback Template
+          </Button>
         </div>
       </CardContent>
     </Card>
