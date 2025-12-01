@@ -3015,27 +3015,22 @@ async def super_admin_vehicle_details(
     return {"message": "Vehicle details saved successfully"}
 
 @api_router.post("/super-admin/checklist/submit")
-async def super_admin_checklist_submit(session_id: str, participant_id: str, current_user: User = Depends(get_current_user)):
-    """Super admin submit checklist for participant (all items checked)"""
+async def super_admin_checklist_submit(
+    session_id: str,
+    participant_id: str,
+    interval: str,
+    checklist_items: List[dict],
+    current_user: User = Depends(get_current_user)
+):
+    """Super admin submit checklist for participant with actual items and images"""
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can submit checklists")
     
-    # Get session and program
-    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    # Get checklist template
-    template = await db.checklist_templates.find_one({"program_id": session['program_id']}, {"_id": 0})
-    if not template:
-        raise HTTPException(status_code=404, detail="No checklist template found for this program")
-    
-    # Create checklist with all items checked
     checklist_obj = VehicleChecklist(
         participant_id=participant_id,
         session_id=session_id,
-        checklist_template_id=template['id'],
-        items=[{"item": item, "checked": True} for item in template['items']]
+        interval=interval,
+        checklist_items=checklist_items
     )
     
     doc = checklist_obj.model_dump()
