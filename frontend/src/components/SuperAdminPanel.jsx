@@ -178,6 +178,9 @@ const SuperAdminPanel = () => {
       
       await refreshParticipant(sessionId, participant.id);
       setVehicleForm({ vehicle_model: "", registration_number: "", roadtax_expiry: "" });
+      
+      // Close dialog after successful submission
+      setVehicleDialog({ open: false, participant: null, sessionId: null });
     } catch (error) {
       toast.error("Failed to save vehicle details");
       console.error(error);
