@@ -645,9 +645,23 @@ const ParticipantDashboard = ({ user, onLogout }) => {
                                 {attendance.clock_out && (
                                   <span className="ml-2 text-sm text-blue-600">
                                     ✓ Clocked out at {
-                                      typeof attendance.clock_out === 'string' 
-                                        ? new Date(attendance.clock_out).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-                                        : 'today'
+                                      (() => {
+                                        if (typeof attendance.clock_out === 'string') {
+                                          // If it's in HH:MM:SS format, convert to 12-hour format
+                                          const parts = attendance.clock_out.split(':');
+                                          if (parts.length >= 2) {
+                                            const hour = parseInt(parts[0]);
+                                            const minute = parts[1];
+                                            const ampm = hour >= 12 ? 'PM' : 'AM';
+                                            const displayHour = hour % 12 || 12;
+                                            return `${displayHour}:${minute} ${ampm}`;
+                                          }
+                                          // Try as ISO date
+                                          const date = new Date(attendance.clock_out);
+                                          return isNaN(date.getTime()) ? attendance.clock_out : date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                        }
+                                        return 'today';
+                                      })()
                                     }
                                   </span>
                                 )}
