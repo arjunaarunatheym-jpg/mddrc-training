@@ -3105,6 +3105,24 @@ async def get_test_result_detail(result_id: str, current_user: User = Depends(ge
     
     return result
 
+@api_router.get("/debug/database-info")
+async def get_database_info(current_user: User = Depends(get_current_user)):
+    """Debug endpoint to check which database is being used"""
+    users_count = await db.users.count_documents({})
+    tests_count = await db.tests.count_documents({})
+    sessions_count = await db.sessions.count_documents({})
+    test_results_count = await db.test_results.count_documents({})
+    
+    return {
+        "db_name": db_name,
+        "collections": {
+            "users": users_count,
+            "tests": tests_count,
+            "sessions": sessions_count,
+            "test_results": test_results_count
+        }
+    }
+
 # Checklist Template Routes
 @api_router.post("/checklist-templates", response_model=ChecklistTemplate)
 async def create_checklist_template(template_data: ChecklistTemplateCreate, current_user: User = Depends(get_current_user)):
