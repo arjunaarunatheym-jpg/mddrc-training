@@ -2943,7 +2943,34 @@ async def super_admin_submit_test(data: SuperAdminTestSubmit, current_user: User
     doc = result_obj.model_dump()
     doc['submitted_at'] = doc['submitted_at'].isoformat()
     
-    await db.test_results.insert_one(doc)
+    # Check if test result already exists for this participant, session, and test type
+    existing = await db.test_results.find_one({
+        "participant_id": data.participant_id,
+        "session_id": data.session_id,
+        "test_type": test_doc['test_type']
+    })
+    
+    if existing:
+        # Update existing test result
+        await db.test_results.update_one(
+            {
+                "participant_id": data.participant_id,
+                "session_id": data.session_id,
+                "test_type": test_doc['test_type']
+            },
+            {"$set": {
+                "test_id": data.test_id,
+                "answers": data.answers,
+                "score": score,
+                "total_questions": len(questions),
+                "correct_answers": correct,
+                "passed": passed,
+                "submitted_at": doc['submitted_at']
+            }}
+        )
+    else:
+        # Insert new test result
+        await db.test_results.insert_one(doc)
     
     update_field = 'pre_test_completed' if test_doc['test_type'] == 'pre' else 'post_test_completed'
     await db.participant_access.update_one(
