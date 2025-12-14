@@ -126,25 +126,25 @@ const ResultsSummary = () => {
                     onClick={() => handleToggleExpand(participant)}
                     data-testid={`participant-${participant.participant.id}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         {expandedParticipant === participant.participant.id ? (
-                          <ChevronDown className="w-5 h-5 text-gray-600" />
+                          <ChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />
                         ) : (
-                          <ChevronRight className="w-5 h-5 text-gray-600" />
+                          <ChevronRight className="w-5 h-5 text-gray-600 flex-shrink-0" />
                         )}
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{participant.participant.name}</h3>
-                          <p className="text-sm text-gray-500">{participant.participant.email}</p>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">{participant.participant.name}</h3>
+                          <p className="text-sm text-gray-500 truncate">{participant.participant.email}</p>
                         </div>
                       </div>
-                      <div className="flex gap-6 text-sm">
+                      <div className="flex gap-4 sm:gap-6 text-sm ml-8 sm:ml-0">
                         {/* Pre-Test */}
-                        <div className="text-center">
+                        <div className="text-center flex-1 sm:flex-none">
                           <p className="text-xs text-gray-500 mb-1">Pre-Test</p>
                           {participant.pre_test && participant.pre_test.completed ? (
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">
+                            <div className="flex items-center gap-1 justify-center">
+                              <span className="font-semibold text-xs sm:text-sm">
                                 {participant.pre_test.correct}/{participant.pre_test.total}
                               </span>
                               {participant.pre_test.passed ? (
@@ -154,15 +154,15 @@ const ResultsSummary = () => {
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-400">Not completed</span>
+                            <span className="text-gray-400 text-xs">Not done</span>
                           )}
                         </div>
                         {/* Post-Test */}
-                        <div className="text-center">
+                        <div className="text-center flex-1 sm:flex-none">
                           <p className="text-xs text-gray-500 mb-1">Post-Test</p>
                           {participant.post_test && participant.post_test.completed ? (
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">
+                            <div className="flex items-center gap-1 justify-center">
+                              <span className="font-semibold text-xs sm:text-sm">
                                 {participant.post_test.correct}/{participant.post_test.total}
                               </span>
                               {participant.post_test.passed ? (
@@ -172,11 +172,11 @@ const ResultsSummary = () => {
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-400">Not completed</span>
+                            <span className="text-gray-400 text-xs">Not done</span>
                           )}
                         </div>
                         {/* Feedback */}
-                        <div className="text-center">
+                        <div className="text-center flex-1 sm:flex-none">
                           <p className="text-xs text-gray-500 mb-1">Feedback</p>
                           {participant.feedback_submitted ? (
                             <CheckCircle className="w-5 h-5 text-green-600 mx-auto" />
