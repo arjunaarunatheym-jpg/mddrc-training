@@ -143,18 +143,26 @@ const SuperAdminPanel = () => {
       const { participant, sessionId } = clockInOutDialog;
       
       if (clockForm.clockIn) {
+        // Extract time without timezone conversion - keep it as selected
+        const clockInDate = new Date(clockForm.clockIn);
+        const clockInTime = `${String(clockInDate.getHours()).padStart(2, '0')}:${String(clockInDate.getMinutes()).padStart(2, '0')}:00`;
+        
         await axiosInstance.post("/super-admin/attendance/clock-in", {
           session_id: sessionId,
           participant_id: participant.id,
-          clock_in: new Date(clockForm.clockIn).toISOString()
+          clock_in: `${clockInDate.toISOString().split('T')[0]}T${clockInTime}+08:00`
         });
       }
       
       if (clockForm.clockOut) {
+        // Extract time without timezone conversion - keep it as selected
+        const clockOutDate = new Date(clockForm.clockOut);
+        const clockOutTime = `${String(clockOutDate.getHours()).padStart(2, '0')}:${String(clockOutDate.getMinutes()).padStart(2, '0')}:00`;
+        
         await axiosInstance.post("/super-admin/attendance/clock-out", {
           session_id: sessionId,
           participant_id: participant.id,
-          clock_out: new Date(clockForm.clockOut).toISOString()
+          clock_out: `${clockOutDate.toISOString().split('T')[0]}T${clockOutTime}+08:00`
         });
       }
       
