@@ -541,9 +541,28 @@ const SuperAdminPanel = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
+                              onClick={async () => {
                                 setClockInOutDialog({ open: true, participant, sessionId: session.id });
-                                setClockForm({ clockIn: "", clockOut: "" });
+                                // Load existing attendance data to pre-fill form
+                                try {
+                                  const response = await axiosInstance.get(`/attendance/${session.id}/${participant.id}`);
+                                  if (response.data && response.data.length > 0) {
+                                    const attendance = response.data[0];
+                                    // Convert HH:MM:SS format to datetime-local format for input
+                                    const today = new Date().toISOString().split('T')[0];
+                                    const clockInValue = attendance.clock_in ? `${today}T${attendance.clock_in.substring(0, 5)}` : "";
+                                    const clockOutValue = attendance.clock_out ? `${today}T${attendance.clock_out.substring(0, 5)}` : "";
+                                    setClockForm({ 
+                                      clockIn: clockInValue, 
+                                      clockOut: clockOutValue 
+                                    });
+                                  } else {
+                                    setClockForm({ clockIn: "", clockOut: "" });
+                                  }
+                                } catch (error) {
+                                  console.error("Failed to load attendance:", error);
+                                  setClockForm({ clockIn: "", clockOut: "" });
+                                }
                               }}
                               className={`flex items-center gap-2 ${
                                 participant.clockedIn ? 'bg-green-100 hover:bg-green-200 border-green-400' : 'bg-red-100 hover:bg-red-200 border-red-400'
