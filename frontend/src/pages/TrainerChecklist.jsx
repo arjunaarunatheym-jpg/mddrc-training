@@ -65,21 +65,20 @@ const TrainerChecklist = ({ user }) => {
       const templateRes = await axiosInstance.get(`/checklists/templates/program/${programId}`);
       console.log('Template loaded:', templateRes.data);
       
-      // API returns array of templates, get first one
-      const templates = templateRes.data;
-      if (!templates || templates.length === 0) {
+      // API returns a single template object (not an array)
+      const template = templateRes.data;
+      if (!template || !template.program_id) {
         toast.error("No checklist template found for this program");
         setChecklistItems([]); // Ensure checklistItems is initialized
         setLoading(false);
         return;
       }
       
-      const template = templates[0];
       setTemplate(template);
       
       // Ensure template has items
       if (!template.items || template.items.length === 0) {
-        toast.error("Checklist template has no items");
+        toast.error("Checklist template has no items. Please contact administrator.");
         setChecklistItems([]);
         setLoading(false);
         return;
