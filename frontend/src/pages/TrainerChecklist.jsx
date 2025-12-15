@@ -212,7 +212,10 @@ const TrainerChecklist = ({ user }) => {
       setSubmitting(false);
     } catch (error) {
       console.error("Submit error:", error);
-      toast.error(error.response?.data?.detail || "Failed to submit checklist");
+      const errorMessage = typeof error.response?.data?.detail === 'string' 
+        ? error.response.data.detail 
+        : error.response?.data?.message || error.message || "Failed to submit checklist";
+      toast.error(errorMessage);
       setSubmitting(false);
     }
   };
