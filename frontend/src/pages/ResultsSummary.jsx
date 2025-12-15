@@ -297,6 +297,66 @@ const ResultsSummary = () => {
                         })}
                       </div>
                     </div>
+                      )}
+
+                      {/* Post-Test Details */}
+                      {expandedSection === 'post-test' && detailedResult && detailedResult.test_questions && (
+                        <div className="p-4 bg-white border-l-4 border-green-500 rounded-r-lg">
+                          <h4 className="font-semibold text-gray-900 mb-3">Post-Test Answers</h4>
+                          <div className="space-y-3">
+                            {detailedResult.test_questions?.map((question, qIndex) => {
+                              const userAnswer = detailedResult.answers[qIndex];
+                              const correctAnswer = question.correct_answer;
+                              const isCorrect = userAnswer === correctAnswer;
+
+                              return (
+                                <div key={qIndex} className="p-3 bg-gray-50 rounded">
+                                  <p className="font-medium text-sm mb-2">Q{qIndex + 1}. {question.question}</p>
+                                  <div className="space-y-1">
+                                    {question.options?.map((option, optIndex) => {
+                                      const isUserAnswer = userAnswer === optIndex;
+                                      const isCorrectOption = correctAnswer === optIndex;
+                                      
+                                      return (
+                                        <div
+                                          key={optIndex}
+                                          className={`px-2 py-1 rounded ${
+                                            isCorrectOption
+                                              ? 'bg-green-100 text-green-900 font-medium'
+                                              : isUserAnswer && !isCorrect
+                                              ? 'bg-red-100 text-red-900'
+                                              : ''
+                                          }`}
+                                        >
+                                          {String.fromCharCode(65 + optIndex)}. {option}
+                                          {isCorrectOption && ' ✓'}
+                                          {isUserAnswer && !isCorrect && ' ✗'}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Feedback Details */}
+                      {expandedSection === 'feedback' && detailedResult && detailedResult.responses && (
+                        <div className="p-4 bg-white border-l-4 border-purple-500 rounded-r-lg">
+                          <h4 className="font-semibold text-gray-900 mb-3">Feedback Responses</h4>
+                          <div className="space-y-3">
+                            {detailedResult.responses.map((response, index) => (
+                              <div key={index} className="p-3 bg-gray-50 rounded">
+                                <p className="font-medium text-sm mb-2">{response.question}</p>
+                                <p className="text-sm text-gray-700">{response.answer || response.response}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
