@@ -118,6 +118,12 @@ const ParticipantDashboard = ({ user, onLogout }) => {
   const handleFeedback = (sessionId) => {
     navigate(`/feedback/${sessionId}`);
   };
+  
+  const handleRefreshStatus = async () => {
+    toast.info("Refreshing status...");
+    await loadData();
+    toast.success("Status updated!");
+  };
 
   const handleDownloadCertificate = async (sessionId) => {
     try {
