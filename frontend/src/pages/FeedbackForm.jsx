@@ -16,6 +16,7 @@ const FeedbackForm = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [responses, setResponses] = useState({});
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
 
   useEffect(() => {
     loadSession();
