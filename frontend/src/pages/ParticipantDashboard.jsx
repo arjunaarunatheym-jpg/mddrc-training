@@ -79,8 +79,10 @@ const ParticipantDashboard = ({ user, onLogout }) => {
 
   const loadParticipantAccess = async (sessionsList) => {
     try {
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
       const accessPromises = sessionsList.map(session =>
-        axiosInstance.get(`/participant-access/${session.id}`)
+        axiosInstance.get(`/participant-access/${session.id}?_t=${timestamp}`)
           .then(res => ({ [session.id]: res.data }))
           .catch(() => ({ [session.id]: {} }))
       );
