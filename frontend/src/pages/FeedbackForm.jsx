@@ -27,6 +27,17 @@ const FeedbackForm = () => {
       const sessionResponse = await axiosInstance.get(`/sessions/${sessionId}`);
       setSession(sessionResponse.data);
       
+      // Check if participant has already submitted feedback for this session
+      try {
+        const accessResponse = await axiosInstance.get(`/participant-access/${sessionId}`);
+        if (accessResponse.data && accessResponse.data.feedback_completed) {
+          setAlreadySubmitted(true);
+          toast.info("You have already submitted feedback for this session.");
+        }
+      } catch (accessError) {
+        console.log("Could not check feedback status");
+      }
+      
       // Try to load feedback template for the program
       let feedbackTemplate = null;
       try {
