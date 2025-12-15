@@ -164,7 +164,10 @@ const TrainerChecklist = ({ user }) => {
       toast.success("Photo uploaded successfully");
     } catch (error) {
       console.error("Photo upload error:", error);
-      toast.error("Failed to upload photo: " + (error.response?.data?.detail || error.message));
+      const errorDetail = typeof error.response?.data?.detail === 'string' 
+        ? error.response.data.detail 
+        : error.message || "Unknown error";
+      toast.error("Failed to upload photo: " + errorDetail);
     }
   };
 
