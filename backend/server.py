@@ -5476,7 +5476,7 @@ async def submit_feedback(feedback_data: FeedbackSubmit, current_user: User = De
     # Ensure participant_access record exists and update feedback status
     await db.participant_access.update_one(
         {"participant_id": current_user.id, "session_id": feedback_data.session_id},
-        {"$set": {"feedback_submitted": True}},
+        {"$set": {"feedback_completed": True}},
         upsert=True
     )
     
