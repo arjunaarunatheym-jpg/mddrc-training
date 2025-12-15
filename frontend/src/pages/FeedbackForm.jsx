@@ -106,6 +106,9 @@ const FeedbackForm = () => {
         responses: formattedResponses
       });
       
+      // Set flag to trigger data reload on participant dashboard
+      sessionStorage.setItem('feedbackSubmitted', 'true');
+      
       toast.success("Feedback submitted successfully! You can now access your certificate.");
       navigate("/participant");
     } catch (error) {
