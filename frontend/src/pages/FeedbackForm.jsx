@@ -230,19 +230,35 @@ const FeedbackForm = () => {
 
             {/* Submit Button */}
             <div className="pt-4">
-              <Button
-                onClick={handleSubmit}
-                disabled={submitting}
-                size="lg"
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                data-testid="submit-feedback-button"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {submitting ? "Submitting..." : "Submit Feedback"}
-              </Button>
-              <p className="text-sm text-gray-500 text-center mt-3">
-                After submitting feedback, your certificate will be available for download
-              </p>
+              {alreadySubmitted ? (
+                <div className="text-center p-6 bg-green-50 border-2 border-green-200 rounded-lg">
+                  <p className="text-green-700 font-semibold text-lg">✓ Feedback Already Submitted</p>
+                  <p className="text-sm text-green-600 mt-2">You have already submitted feedback for this session.</p>
+                  <Button
+                    onClick={() => navigate("/participant")}
+                    variant="outline"
+                    className="mt-4"
+                  >
+                    Back to Dashboard
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    data-testid="submit-feedback-button"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {submitting ? "Submitting..." : "Submit Feedback"}
+                  </Button>
+                  <p className="text-sm text-gray-500 text-center mt-3">
+                    After submitting feedback, your certificate will be available for download
+                  </p>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
