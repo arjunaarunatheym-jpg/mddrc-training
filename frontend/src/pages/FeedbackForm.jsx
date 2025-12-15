@@ -121,8 +121,13 @@ const FeedbackForm = () => {
       // Set flag to trigger data reload on participant dashboard
       sessionStorage.setItem('feedbackSubmitted', 'true');
       
-      toast.success("Feedback submitted successfully! You can now access your certificate.");
-      navigate("/participant");
+      toast.success("Feedback submitted successfully! Redirecting...", { duration: 2000 });
+      
+      // Give toast time to show, then navigate and force reload
+      setTimeout(() => {
+        navigate("/participant", { replace: true });
+        window.location.reload();
+      }, 1500);
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to submit feedback");
       setSubmitting(false);
