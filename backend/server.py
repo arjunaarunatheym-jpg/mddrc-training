@@ -210,7 +210,9 @@ class ParticipantAccess(BaseModel):
     pre_test_completed: bool = False
     post_test_completed: bool = False
     checklist_submitted: bool = False
+    checklist_completed: bool = False
     feedback_submitted: bool = False
+    feedback_completed: bool = False
     certificate_url: Optional[str] = None
     certificate_uploaded_at: Optional[str] = None
     certificate_uploaded_by: Optional[str] = None
