@@ -804,15 +804,8 @@ const AdminDashboard = ({ user, onLogout }) => {
       setDeleteConfirmOpen(false);
       setDeleteTarget(null);
       
-      // Force reload with cache busting
+      // Reload data to refresh the list
       await loadData();
-      
-      // If session deletion, force refresh after a delay
-      if (type === "session") {
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      }
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to delete item");
     }
