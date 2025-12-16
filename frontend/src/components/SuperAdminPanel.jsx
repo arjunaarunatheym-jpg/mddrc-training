@@ -58,7 +58,9 @@ const SuperAdminPanel = () => {
 
   const loadSessionParticipants = async (sessionId) => {
     try {
-      const response = await axiosInstance.get(`/sessions/${sessionId}/participants`);
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      const response = await axiosInstance.get(`/sessions/${sessionId}/participants?_t=${timestamp}`);
       
       const enriched = await Promise.all(response.data.map(async (p) => {
         const participantUser = p.user || p;
