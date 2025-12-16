@@ -6010,8 +6010,9 @@ async def download_participant_certificate(
     
     # For participants, check eligibility (feedback + clock out)
     if current_user.id == participant_id:
-        # Check feedback submission
-        if not access.get('feedback_submitted', False):
+        # Check feedback submission (check both fields for backward compatibility)
+        feedback_done = access.get('feedback_submitted', False) or access.get('feedback_completed', False)
+        if not feedback_done:
             raise HTTPException(
                 status_code=403, 
                 detail="Certificate not available. Please submit your feedback first."
