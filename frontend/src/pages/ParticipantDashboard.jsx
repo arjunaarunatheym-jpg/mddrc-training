@@ -34,11 +34,23 @@ const ParticipantDashboard = ({ user, onLogout }) => {
     const justSubmittedFeedback = sessionStorage.getItem('feedbackSubmitted');
     if (justSubmittedFeedback) {
       sessionStorage.removeItem('feedbackSubmitted');
-      // Force reload to get updated feedback status
-      setTimeout(() => {
-        loadData();
-      }, 500);
+      // Force multiple reloads to ensure data is updated
+      setTimeout(() => loadData(), 500);
+      setTimeout(() => loadData(), 1500);
+      setTimeout(() => loadData(), 3000);
     }
+  }, []);
+  
+  // Also reload when component becomes visible (tab focus)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const loadData = async () => {
