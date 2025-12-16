@@ -5938,6 +5938,37 @@ async def upload_participant_certificate(
         "file_size_mb": round(file_size / (1024 * 1024), 2)
     }
 
+
+
+@api_router.get("/certificates/session/{session_id}")
+async def get_session_certificates(session_id: str, current_user: User = Depends(get_current_user)):
+    """Get all certificates for a session (from participant_access)"""
+    if current_user.role not in ["admin", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Only admins and coordinators can access certificates")
+    
+    # Get all participant access records for this session that have certificates
+    access_records = await db.participant_access.find(
+        {
+            "session_id": session_id,
+            "certificate_url": {"$exists": True, "$ne": None}
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Format for frontend
+    certificates = []
+    for access in access_records:
+        if access.get('certificate_url'):
+            certificates.append({
+                "participant_id": access.get('participant_id'),
+                "file_path": access.get('certificate_url'),  # Use file_path for compatibility
+                "certificate_url": access.get('certificate_url'),
+                "uploaded_at": access.get('certificate_uploaded_at'),
+                "uploaded_by": access.get('certificate_uploaded_by')
+            })
+    
+    return certificates
+
 # Download Certificate for Participant
 @api_router.get("/certificates/download/{session_id}/{participant_id}")
 async def download_participant_certificate(
