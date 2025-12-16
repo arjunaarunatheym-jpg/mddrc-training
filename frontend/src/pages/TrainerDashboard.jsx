@@ -72,12 +72,14 @@ const TrainerDashboard = ({ user, onLogout }) => {
       
       // Filter sessions based on checklist completion and date
       const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Today at midnight
       const activeSessions = sessionsWithParticipants.filter(session => {
         // If no end date, show in active
         if (!session.end_date) return true;
         
         const endDate = new Date(session.end_date);
-        const hasPassedDate = endDate < now;
+        const endDateMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+        const hasPassedDate = endDateMidnight < today;
         
         // If date hasn't passed, always show in active
         if (!hasPassedDate) return true;
