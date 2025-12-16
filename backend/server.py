@@ -683,11 +683,16 @@ async def find_or_create_user(user_data: dict, role: str, company_id: str) -> di
     if existing_user:
         # User found - update with new data
         update_data = {
-            "email": email,
             "id_number": user_data.get("id_number"),
             "phone_number": phone_number,
             "company_id": company_id,
         }
+        
+        # Only update email if a valid non-empty email is provided
+        # Don't overwrite existing email with empty string (violates unique constraint)
+        if email and email.strip():
+            update_data["email"] = email
+        
         # Remove None values
         update_data = {k: v for k, v in update_data.items() if v is not None}
         
