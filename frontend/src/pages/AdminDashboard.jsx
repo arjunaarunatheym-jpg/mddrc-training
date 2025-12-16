@@ -788,7 +788,12 @@ const AdminDashboard = ({ user, onLogout }) => {
       } else if (type === "session") {
         const response = await axiosInstance.delete(`/sessions/${item.id}`);
         const recordsDeleted = response.data?.records_deleted || 0;
-        toast.success(`Session deleted successfully! ${recordsDeleted} related records removed.`, { duration: 4000 });
+        
+        if (recordsDeleted === 0) {
+          toast.warning("Session not found in database (may have been already deleted). Refreshing...", { duration: 3000 });
+        } else {
+          toast.success(`Session deleted successfully! ${recordsDeleted} related records removed.`, { duration: 4000 });
+        }
       } else if (type === "trainer" || type === "coordinator" || type === "assistant_admin" || type === "user") {
         await axiosInstance.delete(`/users/${item.id}`);
         toast.success(`${type.replace('_', ' ')} deleted successfully`);
@@ -796,7 +801,16 @@ const AdminDashboard = ({ user, onLogout }) => {
       
       setDeleteConfirmOpen(false);
       setDeleteTarget(null);
-      loadData();
+      
+      // Force reload with cache busting
+      await loadData();
+      
+      // If session deletion, force refresh after a delay
+      if (type === "session") {
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to delete item");
     }
