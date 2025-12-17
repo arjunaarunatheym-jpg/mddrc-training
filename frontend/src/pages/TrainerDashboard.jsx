@@ -238,25 +238,12 @@ const TrainerDashboard = ({ user, onLogout }) => {
         })
       );
       
-      // Filter for past training: date passed AND all checklists completed
-      const now = new Date();
+      // Filter for past training: Show sessions that coordinator has completed/closed
       const pastSessions = sessionsWithParticipants.filter(session => {
-        if (!session.end_date) return false;
-        
-        const endDate = new Date(session.end_date);
-        const hasPassedDate = endDate < now;
-        
-        if (!hasPassedDate) return false; // Not past yet
-        
-        // Check if all checklists are completed
-        const participants = session.participantsData || [];
-        if (participants.length === 0) return hasPassedDate; // No participants, consider past if date passed
-        
-        const allChecklistsCompleted = participants.every(p => 
-          p.checklist && p.checklist.verification_status === 'completed'
-        );
-        
-        return allChecklistsCompleted; // Only show in past if all checklists done
+        // Show in past training if coordinator has marked as completed
+        return session.completed_by_coordinator === true || 
+               session.completion_status === 'completed' || 
+               session.completion_status === 'archived';
       });
       
       // Apply month/year filter if specified
