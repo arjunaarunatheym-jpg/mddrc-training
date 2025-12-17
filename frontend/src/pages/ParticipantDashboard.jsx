@@ -387,7 +387,10 @@ const ParticipantDashboard = ({ user, onLogout }) => {
                   <CardTitle className="text-green-900">Certificates</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-bold text-green-900">{certificates.length}</p>
+                  <p className="text-4xl font-bold text-green-900">
+                    {/* Count certificates from participant_access where certificate_url exists */}
+                    {Object.values(participantAccess).filter(access => access.certificate_url).length}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
