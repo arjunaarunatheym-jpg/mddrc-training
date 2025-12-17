@@ -546,11 +546,19 @@ const ParticipantDashboard = ({ user, onLogout }) => {
                             <div>
                               {canDownload ? (
                                 <Button
-                                  onClick={async () => {
+                                  onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    const originalText = btn.innerHTML;
+                                    btn.disabled = true;
+                                    btn.innerHTML = '<span class="animate-spin mr-2">⏳</span> Downloading...';
+                                    
                                     try {
                                       const response = await axiosInstance.get(
                                         `/certificates/download/${session.id}/${user.id}`,
-                                        { responseType: 'blob' }
+                                        { 
+                                          responseType: 'blob',
+                                          timeout: 60000 // 60 second timeout for large files
+                                        }
                                       );
                                       
                                       // Check if the response is actually a PDF (not an error)
@@ -560,6 +568,12 @@ const ParticipantDashboard = ({ user, onLogout }) => {
                                         const text = await response.data.text();
                                         const errorData = JSON.parse(text);
                                         toast.error(errorData.detail || "Failed to download certificate");
+                                        return;
+                                      }
+                                      
+                                      // Verify we got actual data
+                                      if (!response.data || response.data.size === 0) {
+                                        toast.error("Certificate file is empty. Please contact administrator.");
                                         return;
                                       }
                                       
@@ -583,11 +597,16 @@ const ParticipantDashboard = ({ user, onLogout }) => {
                                           const errorData = JSON.parse(text);
                                           toast.error(errorData.detail || "Failed to download certificate");
                                         } catch {
-                                          toast.error("Failed to download certificate");
+                                          toast.error("Failed to download certificate. Please try again.");
                                         }
+                                      } else if (error.code === 'ECONNABORTED') {
+                                        toast.error("Download timed out. Please try again.");
                                       } else {
-                                        toast.error(error.response?.data?.detail || "Failed to download certificate");
+                                        toast.error(error.response?.data?.detail || "Failed to download certificate. Please try again.");
                                       }
+                                    } finally {
+                                      btn.disabled = false;
+                                      btn.innerHTML = originalText;
                                     }
                                   }}
                                   className="bg-green-600 hover:bg-green-700 text-white"
