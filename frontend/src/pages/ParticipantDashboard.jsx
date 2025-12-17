@@ -553,11 +553,17 @@ const ParticipantDashboard = ({ user, onLogout }) => {
                                     btn.innerHTML = '<span class="animate-spin mr-2">⏳</span> Downloading...';
                                     
                                     try {
+                                      // Add timestamp to bust cache and get latest certificate
+                                      const timestamp = new Date().getTime();
                                       const response = await axiosInstance.get(
-                                        `/certificates/download/${session.id}/${user.id}`,
+                                        `/certificates/download/${session.id}/${user.id}?_t=${timestamp}`,
                                         { 
                                           responseType: 'blob',
-                                          timeout: 60000 // 60 second timeout for large files
+                                          timeout: 60000, // 60 second timeout for large files
+                                          headers: {
+                                            'Cache-Control': 'no-cache',
+                                            'Pragma': 'no-cache'
+                                          }
                                         }
                                       );
                                       
