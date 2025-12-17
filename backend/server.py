@@ -1387,27 +1387,16 @@ async def get_past_training_sessions(
     query = {}
     current_date = get_malaysia_time().date()
     
-    if current_user.role in ["trainer"]:
-        # Trainers: Sessions past today's date are automatically archived
-        query = {
-            "$or": [
-                {"is_archived": True},
-                {"end_date": {"$lt": current_date.isoformat()}}
-            ]
-        }
-    else:
-        # Coordinators/Admin/Assistant Admin: Only sessions marked as completed by coordinator
-        query = {
-            "$and": [
-                {"completed_by_coordinator": True},
-                {
-                    "$or": [
-                        {"is_archived": True},
-                        {"end_date": {"$lt": current_date.isoformat()}}
-                    ]
-                }
-            ]
-        }
+    # All roles: Show sessions that coordinator has marked as completed
+    # This ensures trainers see past training only after coordinator closes the report
+    query = {
+        "$or": [
+            {"completed_by_coordinator": True},
+            {"completion_status": "completed"},
+            {"completion_status": "archived"},
+            {"is_archived": True}
+        ]
+    }
     
     # Add date filtering if provided
     if month and year:
